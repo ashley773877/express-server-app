@@ -1,21 +1,13 @@
 const express = require('express');
 const data = require('./data/data');
+const ejs = require('ejs');
 
 
 const app = express();
 const PORT = 3000;
 
-
-
-
-//middlewear 
-const loggerMiddleware = (req, res, next) => {
-    console.log(`[${new Date().toLocaleString()}] ${req.method} ${req.url}`);
-    next();
-  };
-
-  //middlewear 2
-  const authenticationMiddleware = (req, res, next) => {
+//middlewear 2
+const authenticationMiddleware = (req, res, next) => {
     const validUsername = 'Ashley773877';
     const validPassword = 'ashley123';
   
@@ -28,22 +20,53 @@ const loggerMiddleware = (req, res, next) => {
         res.status(401).send('Unauthorized'); // Invalid credentials
       }
     };
- //error handling middlewear
+
+//middlewear 
+const loggerMiddleware = (req, res, next) => {
+    console.log(`[${new Date().toLocaleString()}] ${req.method} ${req.url}`);
+    next();
+  };
+
+  app.set('view engine', 'ejs');
+
+//error handling middlewear
  app.use((err, req, res, next) => {
     // Handle the error
-    res.status(err.status || 500).json({
+    res.status(err.status || 404).json({
       error: {
-        message: err.message || 'Internal Server Error',
+        message: err.message || 'Server Error',
       },
     });
   });
 
+  app.use(loggerMiddleware);
+  app.use(express.static('styles'));
 
-app.use(loggerMiddleware);
-app.use(authenticationMiddleware);
+  //restful route
+app.route('/users')
+.get((req, res) => {
+ res.render('users', { users: data.users });
+});
 
+
+
+app.use('/posts', authenticationMiddleware);
+app.use('/comments', authenticationMiddleware);
+
+ 
 //routes
-app.get('/', (req, res) => {
+//POST route for creating a new user
+app.post('/users', (req, res) => {
+    const newUser = {
+      id: data.users.length + 1,
+      username: req.body.username,
+    };
+    data.addUser(newUser);
+    res.redirect('/users'); // Redirect back to the user list after creating a new user
+  });
+
+
+  app.get('/', (req, res) => {
     res.send('Hello, this is your Express server!');
   });
 
